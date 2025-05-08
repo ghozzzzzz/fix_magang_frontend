@@ -3,21 +3,27 @@ import { useState } from 'react';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import ParticipantDashboard from './pages/ParticipantDashboard';
 
 function App() {
-  const [user, setUser] = useState(null); // <- Tambahkan ini
+  const [user, setUser] = useState(null);
 
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login setUser={setUser} />} /> {/* <-- Perbaikan di sini */}
+        <Route path="/login" element={<Login setUser={setUser} />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/participant" element={<ParticipantDashboard />} />
+        <Route path="/participant" element={
+          user === "participant" ? <ParticipantDashboard /> : <Navigate to="/login" />
+        } />
 
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin-login" element={<AdminLogin setUser={setUser} />} />
+        <Route path="/admin" element={
+          user === "admin" ? <AdminDashboard /> : <Navigate to="/admin-login" />
+        } />
       </Routes>
     </Router>
   );
