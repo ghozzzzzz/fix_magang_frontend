@@ -13,7 +13,7 @@ export default function Komunitas() {
         setLoading(true);
         const response = await axios.get('http://localhost:8000/api/komunitas', {
           headers: {
-            Authorization: 'Bearer 4|HgsnMFaA4jtbWUXR5qSgydi7gZ2zTxdqQiN0vUIxa6bc2587',
+            Authorization: '3|DObpaXGVqygttKJ6rxeDnfgLSq8G1TauNSPJPamn89f4d398',
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },

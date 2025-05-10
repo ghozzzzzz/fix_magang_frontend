@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useAnimation } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
+import batikImage from '../assets/batik.jpg';
+import gamelanAudio from '../assets/gamelan.mp3'; // Import the gamelan audio file
 
-// Enhanced Section Component with 3D tilt effect
-const Section = ({ children, delay = 0, className = '' }) => {
+// Section Component
+const Section = ({ children, delay = 0, className = '', id }) => {
   const controls = useAnimation();
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
 
@@ -21,6 +23,7 @@ const Section = ({ children, delay = 0, className = '' }) => {
   return (
     <motion.div
       ref={ref}
+      id={id}
       initial={{ opacity: 0, y: 80 }}
       animate={controls}
       className={`relative ${className}`}
@@ -49,9 +52,24 @@ const FeatureCard = ({ icon, title, description, color }) => {
   );
 };
 
+// Running Text Component
+const RunningText = () => {
+  return (
+    <div className="bg-amber-600 text-white py-2 overflow-hidden">
+      <div className="animate-marquee whitespace-nowrap">
+        <span className="mx-4">Selamat datang di Indigo Space SDK - Nikmati fasilitas premium dengan nuansa budaya Indonesia!</span>
+        <span className="mx-4">Bergabunglah dengan komunitas digital dan UMKM terbesar di Semarang!</span>
+        <span className="mx-4">Daftar sekarang dan rasakan pengalaman kolaborasi tanpa batas!</span>
+      </div>
+    </div>
+  );
+};
+
 function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = React.useRef(null);
 
   // Handle scroll for header
   useEffect(() => {
@@ -74,6 +92,29 @@ function LandingPage() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+  // Audio playback control
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0.3; // Set initial volume to 30%
+      audioRef.current.play().catch(error => console.log("Audio play failed:", error));
+    }
+  }, []);
+
+  // Smooth scroll function
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
   const facilities = [
     { icon: "💻", title: "Coworking Space", description: "Ruang kerja nyaman dengan meja ergonomis dan kursi premium" },
     { icon: "📶", title: "Internet Cepat", description: "Koneksi fiber optic 1Gbps untuk kebutuhan digital Anda" },
@@ -84,13 +125,30 @@ function LandingPage() {
   ];
 
   return (
-    <div className="font-sans bg-gradient-to-br from-blue-50 to-indigo-50 overflow-x-hidden">
-      {/* Floating Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+    <div className="font-sans bg-gradient-to-br from-amber-50 to-red-50 overflow-x-hidden">
+      <style>
+        {`
+          @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .animate-marquee {
+            animation: marquee 20s linear infinite;
+            display: inline-block;
+          }
+          .batik-pattern {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path fill="rgba(139, 69, 19, 0.2)" d="M50 0C22.4 0 0 22.4 0 50s22.4 50 50 50 50-22.4 50-50S77.6 0 50 0zm0 90C28.5 90 10 71.5 10 50S28.5 10 50 10s40 18.5 40 40-18.5 40-40 40z"/><path fill="rgba(255, 215, 0, 0.3)" d="M50 20c-16.6 0-30 13.4-30 30s13.4 30 30 30 30-13.4 30-30-13.4-30-30-30zm0 50c-11 0-20-9-20-20s9-20 20-20 20 9 20 20-9 20-20 20z"/></svg>');
+            background-repeat: repeat;
+          }
+        `}
+      </style>
+
+      {/* Floating Background Elements with Batik Pattern */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none batik-pattern">
         {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full bg-blue-200/20"
+            className="absolute rounded-full bg-amber-200/20"
             initial={{
               x: Math.random() * window.innerWidth,
               y: Math.random() * window.innerHeight,
@@ -111,10 +169,13 @@ function LandingPage() {
         ))}
       </div>
 
-      {/* Enhanced Header with Glass Morphism */}
+      {/* Audio Element (hidden) */}
+      <audio ref={audioRef} loop src={gamelanAudio} />
+
+      {/* Header with Batik Theme and Mute Button */}
       <motion.header
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
-          isScrolled ? 'bg-white/90 shadow-lg backdrop-blur-md' : 'bg-transparent'
+          isScrolled ? 'bg-amber-800/90 shadow-lg backdrop-blur-md' : 'bg-transparent'
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -127,10 +188,10 @@ function LandingPage() {
             transition={{ delay: 0.2 }}
           >
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+              <div className="w-10 h-10 bg-gradient-to-r from-amber-600 to-red-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
                 IS
               </div>
-              <span className={`text-xl font-bold ${isScrolled ? 'text-gray-800' : 'text-white'}`}>
+              <span className={`text-xl font-bold ${isScrolled ? 'text-white' : 'text-white'}`}>
                 Indigo Space
               </span>
             </Link>
@@ -144,15 +205,15 @@ function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.1 }}
               >
-                <a
-                  href={`#${item}`}
-                  className={`relative group ${isScrolled ? 'text-gray-700' : 'text-white'}`}
+                <button
+                  onClick={() => scrollToSection(item)}
+                  className={`relative group ${isScrolled ? 'text-white' : 'text-white'}`}
                 >
                   <span className="font-medium">
                     {item.charAt(0).toUpperCase() + item.slice(1).replace('bergabung', 'Bergabung')}
                   </span>
-                  <span className="absolute left-0 bottom-0 h-0.5 bg-blue-500 w-0 group-hover:w-full transition-all duration-300"></span>
-                </a>
+                  <span className="absolute left-0 bottom-0 h-0.5 bg-amber-400 w-0 group-hover:w-full transition-all duration-300"></span>
+                </button>
               </motion.div>
             ))}
           </nav>
@@ -163,12 +224,22 @@ function LandingPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
           >
+            <button
+              onClick={toggleMute}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                isScrolled 
+                  ? 'text-amber-300 hover:bg-amber-900/50' 
+                  : 'text-white hover:bg-amber-900/20'
+              }`}
+            >
+              {isMuted ? 'Unmute' : 'Mute'}
+            </button>
             <Link
               to="/login"
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 isScrolled 
-                  ? 'text-blue-600 hover:bg-blue-50' 
-                  : 'text-white hover:bg-white/20'
+                  ? 'text-amber-300 hover:bg-amber-900/50' 
+                  : 'text-white hover:bg-amber-900/20'
               }`}
             >
               Masuk
@@ -177,8 +248,8 @@ function LandingPage() {
               to="/register"
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 isScrolled
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-white text-blue-600 hover:bg-gray-100'
+                  ? 'bg-amber-600 text-white hover:bg-amber-700'
+                  : 'bg-amber-600 text-white hover:bg-amber-700'
               }`}
             >
               Daftar
@@ -187,17 +258,18 @@ function LandingPage() {
         </div>
       </motion.header>
 
-      {/* Hero Section with Parallax and Gradient */}
+      {/* Hero Section with Local Batik Image Background */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div 
-          className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-indigo-900/80 z-0"
+          className="absolute inset-0 bg-gradient-to-r from-amber-900/80 to-red-900/80 z-0"
           style={{
             transform: `translate(${mousePosition.x * 30}px, ${mousePosition.y * 30}px)`
           }}
         />
         <div 
-          className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')] bg-cover bg-center z-0 opacity-30"
+          className="absolute inset-0 bg-cover bg-center z-0 opacity-30"
           style={{
+            backgroundImage: `url(${batikImage})`,
             transform: `translate(${mousePosition.x * 20}px, ${mousePosition.y * 20}px) scale(1.1)`
           }}
         />
@@ -214,19 +286,19 @@ function LandingPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-white">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-white">
               Kolaborasi Tanpa Batas di
             </span><br />
             <span className="text-white">Indigo Space SDK</span>
           </motion.h1>
           
           <motion.p
-            className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto"
+            className="text-xl text-amber-100 mb-10 max-w-2xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
-            Ruang kolaboratif eksklusif untuk komunitas digital dan UMKM Kota Semarang. Temukan inspirasi, jaringan, dan fasilitas premium untuk mengembangkan bisnis Anda.
+            Ruang kolaboratif eksklusif dengan nuansa budaya Indonesia untuk komunitas digital dan UMKM Kota Semarang.
           </motion.p>
           
           <motion.div
@@ -237,7 +309,7 @@ function LandingPage() {
           >
             <Link
               to="/register"
-              className="px-8 py-4 bg-white text-blue-700 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              className="px-8 py-4 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
               whileHover={{ y: -4 }}
             >
               <span>Mulai Sekarang</span>
@@ -245,15 +317,15 @@ function LandingPage() {
                 <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </Link>
-            <Link
-              to="#fasilitas"
+            <button
+              onClick={() => scrollToSection('fasilitas')}
               className="px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-2"
             >
               <span>Lihat Fasilitas</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
               </svg>
-            </Link>
+            </button>
           </motion.div>
         </motion.div>
 
@@ -262,15 +334,18 @@ function LandingPage() {
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <a href="#tentang" className="text-white">
+          <button onClick={() => scrollToSection('tentang')} className="text-white">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
-          </a>
+          </button>
         </motion.div>
       </section>
 
-      {/* Tentang Kami with Animated Stats */}
+      {/* Running Text */}
+      <RunningText />
+
+      {/* Tentang Kami */}
       <Section delay={0.2} id="tentang" className="py-20">
         <div className="container mx-auto px-6">
           <div className="flex flex-col lg:flex-row items-center gap-12">
@@ -281,22 +356,22 @@ function LandingPage() {
             >
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80" 
-                  alt="Team Collaboration" 
+                  src="https://images.unsplash.com/photo-1596702874057-720d663ef937" 
+                  alt="Batik Workshop" 
                   className="w-full h-auto object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/70 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-amber-900/70 to-transparent"></div>
               </div>
             </motion.div>
             
             <div className="lg:w-1/2">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-red-600">
                   Tentang Indigo Space
                 </span>
               </h2>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                Indigo Space SDK adalah pusat inovasi dan kolaborasi pertama di Semarang yang khusus dirancang untuk mempertemukan komunitas digital, kreator konten, dan pelaku UMKM dalam satu ekosistem yang saling mendukung.
+                Indigo Space SDK adalah pusat inovasi dan kolaborasi dengan sentuhan budaya Indonesia, khususnya batik, yang mempertemukan komunitas digital, kreator konten, dan pelaku UMKM Semarang.
               </p>
               
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -307,11 +382,11 @@ function LandingPage() {
                 ].map((stat, index) => (
                   <motion.div
                     key={index}
-                    className="bg-white p-4 rounded-xl shadow-md border border-gray-100"
+                    className="bg-white p-4 rounded-xl shadow-md border border-amber-100"
                     whileHover={{ y: -5 }}
                     transition={{ type: "spring", stiffness: 300 }}
                   >
-                    <div className="text-2xl font-bold text-blue-600">{stat.number}</div>
+                    <div className="text-2xl font-bold text-amber-600">{stat.number}</div>
                     <div className="text-gray-500">{stat.label}</div>
                   </motion.div>
                 ))}
@@ -321,15 +396,15 @@ function LandingPage() {
         </div>
       </Section>
 
-      {/* Fasilitas with Card Grid */}
-      <Section delay={0.4} id="fasilitas" className="py-20 bg-gradient-to-br from-blue-50 to-indigo-50">
+      {/* Fasilitas */}
+      <Section delay={0.4} id="fasilitas" className="py-20 bg-gradient-to-br from-amber-50 to-red-50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Fasilitas <span className="text-blue-600">Premium</span>
+              Fasilitas <span className="text-amber-600">Premium</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Nikmati berbagai fasilitas berkualitas tinggi yang dirancang untuk mendukung produktivitas dan kolaborasi Anda.
+              Nikmati fasilitas berkualitas tinggi dengan nuansa budaya Indonesia untuk mendukung produktivitas Anda.
             </p>
           </div>
           
@@ -340,22 +415,22 @@ function LandingPage() {
                 icon={facility.icon}
                 title={facility.title}
                 description={facility.description}
-                color={index % 2 === 0 ? "bg-gradient-to-br from-white to-blue-50" : "bg-white"}
+                color={index % 2 === 0 ? "bg-gradient-to-br from-white to-amber-50" : "bg-white"}
               />
             ))}
           </div>
         </div>
       </Section>
 
-      {/* Komunitas with Testimonials */}
+      {/* Komunitas */}
       <Section delay={0.6} id="komunitas" className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Komunitas <span className="text-indigo-600">Kreatif</span>
+              Komunitas <span className="text-red-600">Kreatif</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Bergabunglah dengan jaringan profesional dan kreatif terbesar di Semarang.
+              Bergabunglah dengan jaringan profesional dan kreatif terbesar di Semarang dengan nuansa budaya lokal.
             </p>
           </div>
           
@@ -368,13 +443,13 @@ function LandingPage() {
                 avatar: "https://randomuser.me/api/portraits/women/44.jpg"
               },
               {
-                quote: "Sejak bergabung, bisnis saya berkembang melalui kolaborasi dengan UMKM lainnya.",
+                quote: "Sejak bergabung, bisnis batik saya berkembang melalui kolaborasi dengan UMKM lainnya.",
                 author: "Budi Santoso",
                 role: "Pemilik Batik Semar",
                 avatar: "https://randomuser.me/api/portraits/men/32.jpg"
               },
               {
-                quote: "Event networking di sini membantu saya menemukan klien dan mitra bisnis.",
+                quote: "Event networking dengan tema budaya membantu saya menemukan klien dan mitra bisnis.",
                 author: "Rina Dewi",
                 role: "Digital Marketer",
                 avatar: "https://randomuser.me/api/portraits/women/68.jpg"
@@ -382,11 +457,11 @@ function LandingPage() {
             ].map((testimonial, index) => (
               <motion.div
                 key={index}
-                className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100"
+                className="bg-white p-8 rounded-2xl shadow-lg border border-amber-100"
                 whileHover={{ y: -10 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="text-yellow-400 text-2xl mb-4">"</div>
+                <div className="text-amber-400 text-2xl mb-4">"</div>
                 <p className="text-gray-600 mb-6">{testimonial.quote}</p>
                 <div className="flex items-center">
                   <img 
@@ -405,12 +480,12 @@ function LandingPage() {
         </div>
       </Section>
 
-      {/* Cara Bergabung with Steps */}
-      <Section delay={0.8} id="bergabung" className="py-20 bg-gradient-to-br from-indigo-50 to-blue-50">
+      {/* Cara Bergabung */}
+      <Section delay={0.8} id="bergabung" className="py-20 bg-gradient-to-br from-red-50 to-amber-50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Cara <span className="text-blue-600">Bergabung</span>
+              Cara <span className="text-amber-600">Bergabung</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Mulai perjalanan kolaboratif Anda dalam 3 langkah mudah.
@@ -418,7 +493,7 @@ function LandingPage() {
           </div>
           
           <div className="relative">
-            <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-200 to-indigo-200 transform -translate-x-1/2"></div>
+            <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-200 to-red-200 transform -translate-x-1/2"></div>
             
             <div className="space-y-12 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8">
               {[
@@ -455,14 +530,14 @@ function LandingPage() {
               ].map((step, index) => (
                 <motion.div
                   key={index}
-                  className="relative bg-white p-8 rounded-2xl shadow-lg border border-gray-100 text-center lg:text-left"
+                  className="relative bg-white p-8 rounded-2xl shadow-lg border border-amber-100"
                   whileHover={{ scale: 1.03 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 lg:left-8 lg:translate-x-0 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 lg:left-8 lg:translate-x-0 w-12 h-12 bg-amber-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
                     {step.step}
                   </div>
-                  <div className="mt-6 mb-4 text-blue-600">
+                  <div className="mt-6 mb-4 text-amber-600">
                     {step.icon}
                   </div>
                   <h3 className="text-xl font-bold text-gray-800 mb-3">{step.title}</h3>
@@ -475,7 +550,7 @@ function LandingPage() {
           <div className="mt-16 text-center">
             <Link
               to="/register"
-              className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="inline-block px-8 py-4 bg-gradient-to-r from-amber-600 to-red-600 text-white font-semibold rounded-lg hover:from-amber-700 hover:to-red-700 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
               Daftar Sekarang - Gratis!
             </Link>
@@ -484,51 +559,51 @@ function LandingPage() {
       </Section>
 
       {/* CTA Section */}
-      <Section className="py-20 bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+      <Section className="py-20 bg-gradient-to-r from-amber-900 to-red-900 text-white">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Siap Bergabung dengan Komunitas Kami?
           </h2>
-          <p className="text-xl text-blue-200 mb-10 max-w-2xl mx-auto">
-            Jadilah bagian dari ekosistem digital dan UMKM terbesar di Semarang.
+          <p className="text-xl text-amber-200 mb-10 max-w-2xl mx-auto">
+            Jadilah bagian dari ekosistem digital dan UMKM terbesar di Semarang dengan nuansa budaya Indonesia.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/register"
-              className="px-8 py-4 bg-white text-blue-700 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="px-8 py-4 bg-white text-amber-700 font-semibold rounded-lg hover:bg-amber-100 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
               Daftar Sekarang
             </Link>
-            <Link
-              to="#fasilitas"
+            <button
+              onClick={() => scrollToSection('fasilitas')}
               className="px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300"
             >
               Lihat Fasilitas
-            </Link>
+            </button>
           </div>
         </div>
       </Section>
 
-      {/* Enhanced Footer */}
-      <footer className="bg-gray-900 text-white pt-16 pb-8">
+      {/* Footer */}
+      <footer className="bg-amber-900 text-white pt-16 pb-8">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                <div className="w-10 h-10 bg-gradient-to-r from-amber-600 to-red-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
                   IS
                 </div>
                 <span className="text-xl font-bold">Indigo Space</span>
               </div>
-              <p className="text-gray-400 mb-4">
-                Ruang kolaborasi untuk komunitas digital dan UMKM Kota Semarang.
+              <p className="text-amber-200 mb-4">
+                Ruang kolaborasi dengan nuansa budaya Indonesia untuk komunitas digital dan UMKM Kota Semarang.
               </p>
               <div className="flex space-x-4">
                 {['facebook', 'twitter', 'instagram', 'linkedin'].map((social) => (
                   <a 
                     key={social} 
                     href="#" 
-                    className="text-gray-400 hover:text-white transition-colors duration-300"
+                    className="text-amber-200 hover:text-white transition-colors duration-300"
                   >
                     <span className="sr-only">{social}</span>
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -544,12 +619,12 @@ function LandingPage() {
               <ul className="space-y-2">
                 {['tentang', 'fasilitas', 'komunitas', 'bergabung'].map((item) => (
                   <li key={item}>
-                    <a 
-                      href={`#${item}`} 
-                      className="text-gray-400 hover:text-white transition-colors duration-300"
+                    <button 
+                      onClick={() => scrollToSection(item)}
+                      className="text-amber-200 hover:text-white transition-colors duration-300"
                     >
                       {item.charAt(0).toUpperCase() + item.slice(1)}
-                    </a>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -557,7 +632,7 @@ function LandingPage() {
             
             <div>
               <h4 className="text-lg font-semibold mb-4">Kontak</h4>
-              <address className="not-italic text-gray-400 space-y-2">
+              <address className="not-italic text-amber-200 space-y-2">
                 <p>Jl. Empu Tantular No. 2</p>
                 <p>Bandarharjo, Kota Semarang</p>
                 <p>Email: info@indigospace.id</p>
@@ -567,7 +642,7 @@ function LandingPage() {
             
             <div>
               <h4 className="text-lg font-semibold mb-4">Jam Operasional</h4>
-              <ul className="text-gray-400 space-y-2">
+              <ul className="text-amber-200 space-y-2">
                 <li>Senin-Jumat: 08.00 - 22.00</li>
                 <li>Sabtu: 09.00 - 17.00</li>
                 <li>Minggu: Tutup</li>
@@ -575,13 +650,13 @@ function LandingPage() {
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+          <div className="border-t border-amber-800 mt-12 pt-8 text-center text-amber-200">
             <p>© {new Date().getFullYear()} Indigo Space SDK. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
-      {/* Social Media Icons (hidden but needed for use in footer) */}
+      {/* Social Media Icons */}
       <svg xmlns="http://www.w3.org/2000/svg" className="hidden">
         <symbol id="facebook-icon" viewBox="0 0 24 24">
           <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.068 4.388 22.954 10.125 24v-8.437H7.078V12.073h3.047V9.428c0-3.007 1.792-4.669 4.532-4.669 1.312 0 2.686.234 2.686.234v2.953h-1.512c-1.488 0-1.947.927-1.947 1.874v2.253h3.328l-.531 3.461h-2.797V24C19.612 22.954 24 18.068 24 12.073z"/>
