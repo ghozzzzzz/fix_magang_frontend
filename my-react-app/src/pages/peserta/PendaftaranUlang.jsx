@@ -2,16 +2,16 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 
 export default function PendaftaranUlang({ user, handleSubmit, submitted }) {
-  const [members, setMembers] = useState(['']);
-  
-  const handleMemberChange = (index, value) => {
+  const [members, setMembers] = useState([{ name: '', phone: '', email: '' }]);
+
+  const handleMemberChange = (index, field, value) => {
     const newMembers = [...members];
-    newMembers[index] = value;
+    newMembers[index] = { ...newMembers[index], [field]: value };
     setMembers(newMembers);
   };
 
   const addMemberField = () => {
-    setMembers([...members, '']);
+    setMembers([...members, { name: '', phone: '', email: '' }]);
   };
 
   const removeMemberField = (index) => {
@@ -22,7 +22,8 @@ export default function PendaftaranUlang({ user, handleSubmit, submitted }) {
   const onSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    formData.append('members', JSON.stringify(members.filter(member => member.trim() !== '')));
+    const filteredMembers = members.filter(member => member.name.trim() !== '');
+    formData.append('members', JSON.stringify(filteredMembers));
     handleSubmit(e, formData);
   };
 
@@ -84,31 +85,47 @@ export default function PendaftaranUlang({ user, handleSubmit, submitted }) {
               required
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-3">
             <label className="text-sm font-medium text-gray-700">Daftar Anggota</label>
             {members.map((member, index) => (
-              <div key={index} className="flex items-center space-x-2">
+              <div key={index} className="space-y-2 p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <input
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    placeholder={`Nama anggota ${index + 1}`}
+                    value={member.name}
+                    onChange={(e) => handleMemberChange(index, 'name', e.target.value)}
+                  />
+                  {members.length > 1 && (
+                    <button
+                      type="button"
+                      className="p-2 text-red-600 hover:text-red-800"
+                      onClick={() => removeMemberField(index)}
+                    >
+                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <input
+                  type="tel"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder={`Nama anggota ${index + 1}`}
-                  value={member}
-                  onChange={(e) => handleMemberChange(index, e.target.value)}
+                  placeholder={`Nomor HP anggota ${index + 1}`}
+                  value={member.phone}
+                  onChange={(e) => handleMemberChange(index, 'phone', e.target.value)}
                 />
-                {members.length > 1 && (
-                  <button
-                    type="button"
-                    className="p-2 text-red-600 hover:text-red-800"
-                    onClick={() => removeMemberField(index)}
-                  >
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                )}
+                <input
+                  type="email"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder={`Email anggota ${index + 1}`}
+                  value={member.email}
+                  onChange={(e) => handleMemberChange(index, 'email', e.target.value)}
+                />
               </div>
             ))}
             <button
