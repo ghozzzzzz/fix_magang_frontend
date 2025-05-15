@@ -5,7 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import ParticipantDashboard from './pages/peserta/ParticipantDashboard'; // Perbarui jalur impor
+import ParticipantDashboard from './pages/peserta/ParticipantDashboard'; 
 
 function App() {
   const [user, setUser] = useState(null);

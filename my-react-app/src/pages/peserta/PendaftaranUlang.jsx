@@ -1,17 +1,43 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 
 export default function PendaftaranUlang({ user, handleSubmit, submitted }) {
+  const [members, setMembers] = useState(['']);
+  
+  const handleMemberChange = (index, value) => {
+    const newMembers = [...members];
+    newMembers[index] = value;
+    setMembers(newMembers);
+  };
+
+  const addMemberField = () => {
+    setMembers([...members, '']);
+  };
+
+  const removeMemberField = (index) => {
+    const newMembers = members.filter((_, i) => i !== index);
+    setMembers(newMembers);
+  };
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    formData.append('members', JSON.stringify(members.filter(member => member.trim() !== '')));
+    handleSubmit(e, formData);
+  };
+
   return (
     <div className="animate-fadeIn">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Pendaftaran Ulang</h2>
       {user && (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700">Nama Lengkap</label>
             <input
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               placeholder="Masukkan nama lengkap"
               defaultValue={user.koordinator}
+              name="nama_lengkap"
               required
             />
           </div>
@@ -21,6 +47,7 @@ export default function PendaftaranUlang({ user, handleSubmit, submitted }) {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               placeholder="Masukkan asal komunitas"
               defaultValue={user.nama_komunitas}
+              name="asal_komunitas"
               required
             />
           </div>
@@ -31,6 +58,7 @@ export default function PendaftaranUlang({ user, handleSubmit, submitted }) {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               placeholder="Masukkan email aktif"
               defaultValue={user.email_komunitas}
+              name="email"
               required
             />
           </div>
@@ -39,10 +67,57 @@ export default function PendaftaranUlang({ user, handleSubmit, submitted }) {
             <input
               type="tel"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder="Masalnya nomor HP"
+              placeholder="Masukkan nomor HP"
               defaultValue={user.telepon}
+              name="nomor_hp"
               required
             />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Jumlah Anggota</label>
+            <input
+              type="number"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              placeholder="Masukkan jumlah anggota"
+              name="jumlah_anggota"
+              min="1"
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Daftar Anggota</label>
+            {members.map((member, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <input
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder={`Nama anggota ${index + 1}`}
+                  value={member}
+                  onChange={(e) => handleMemberChange(index, e.target.value)}
+                />
+                {members.length > 1 && (
+                  <button
+                    type="button"
+                    className="p-2 text-red-600 hover:text-red-800"
+                    onClick={() => removeMemberField(index)}
+                  >
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+              onClick={addMemberField}
+            >
+              + Tambah Anggota
+            </button>
           </div>
           <button
             type="submit"
