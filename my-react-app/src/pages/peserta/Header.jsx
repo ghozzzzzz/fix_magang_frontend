@@ -32,7 +32,7 @@ export default function Header({ activeTab, setActiveTab }) {
           }`}
           onClick={() => setActiveTab('riwayat')}
         >
-          Riwayat Pendaftaran
+          Riwayat Boking
         </div>
       </div>
     </div>

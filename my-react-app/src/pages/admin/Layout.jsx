@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Layout({ activeSection, setActiveSection, children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     localStorage.removeItem('adminSession');
     console.log('Logged out');
+    navigate('/admin-login'); // Redirect to admin-login route
   };
 
   const getButtonClass = (section) => `
