@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api/axios'; // Tetap relatif ke struktur proyek
+import api from '../../api/axios';
 import Sidebar from '../peserta/Sidebar';
 import Header from '../peserta/Header';
 import PendaftaranUlang from '../peserta/PendaftaranUlang';
 import BookingRuangan from '../peserta/BookingRuangan';
-import RiwayatPendaftaran from '../peserta/RiwayatPendaftaran';
+import RiwayatBooking from '../peserta/RiwayatBooking';
+import TambahAnggota from '../peserta/TambahAnggota';
 
 export default function ParticipantDashboard() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function ParticipantDashboard() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('pendaftaran');
   const [submitted, setSubmitted] = useState(false);
+  const [memberAdded, setMemberAdded] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -25,6 +27,13 @@ export default function ParticipantDashboard() {
     rooms: false,
     bookings: false,
     history: false,
+  });
+
+  // Data form untuk penambahan anggota
+  const [memberData, setMemberData] = useState({
+    nama: '',
+    no_telepon: '',
+    email: '',
   });
 
   // Booking form data
@@ -46,7 +55,8 @@ export default function ParticipantDashboard() {
 
         if (token && komunitas) {
           api.defaults.headers.Authorization = `Bearer ${token}`;
-          setUser(JSON.parse(komunitas));
+          const parsedKomunitas = JSON.parse(komunitas);
+          setUser(parsedKomunitas);
         } else {
           navigate('/login');
         }
@@ -78,6 +88,7 @@ export default function ParticipantDashboard() {
       setRooms(response.data.data);
     } catch (err) {
       console.error('Gagal mengambil data ruangan:', err);
+      alert(err.response?.data?.message || 'Gagal mengambil data ruangan');
     } finally {
       setLoading((prev) => ({ ...prev, rooms: false }));
     }
@@ -91,32 +102,58 @@ export default function ParticipantDashboard() {
       setBookings(response.data.data);
     } catch (err) {
       console.error('Gagal mengambil riwayat pemesanan:', err);
+      alert(err.response?.data?.message || 'Gagal mengambil riwayat pemesanan');
     } finally {
       setLoading((prev) => ({ ...prev, history: false }));
     }
   };
 
-  // Handle registration form submission
+  // Handle registration form submission (update komunitas)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitted(true);
 
     try {
       const formData = {
-        nama: e.target[0].value,
-        komunitas: e.target[1].value,
-        email: e.target[2].value,
-        noHP: e.target[3].value,
-        tanggal: new Date().toISOString().split('T')[0],
-        status: 'pending',
+        nama_komunitas: e.target[0].value,
+        koordinator: e.target[1].value,
+        email_komunitas: e.target[2].value,
+        telepon: e.target[3].value,
       };
 
-      const response = await api.post('/pemesanan', formData);
-      setBookings([...bookings, response.data.data]);
+      const response = await api.put(`/komunitas/${user.id_komunitas}`, formData);
+      setUser(response.data.data);
+      localStorage.setItem('komunitas', JSON.stringify(response.data.data));
+      alert('Data komunitas berhasil diperbarui');
     } catch (err) {
-      console.error('Gagal mengirim pendaftaran:', err);
-      alert(err.response?.data?.message || 'Gagal mengirim pendaftaran');
+      console.error('Gagal memperbarui data komunitas:', err);
+      alert(err.response?.data?.message || 'Gagal memperbarui data komunitas');
     }
+  };
+
+  // Handle member addition (tambah anggota)
+  const handleAddMember = async (e) => {
+    e.preventDefault();
+    setMemberAdded(true);
+
+    try {
+      const response = await api.post('/anggota', memberData);
+      alert('Anggota berhasil ditambahkan');
+      setMemberData({ nama: '', no_telepon: '', email: '' });
+      setMemberAdded(false);
+    } catch (err) {
+      console.error('Gagal menambahkan anggota:', err);
+      alert(err.response?.data?.message || 'Gagal menambahkan anggota');
+    }
+  };
+
+  // Handle member form changes
+  const handleMemberChange = (e) => {
+    const { name, value } = e.target;
+    setMemberData({
+      ...memberData,
+      [name]: value,
+    });
   };
 
   // Handle booking form changes
@@ -134,44 +171,88 @@ export default function ParticipantDashboard() {
     }
   };
 
-  // Handle booking submission
-  const handleBooking = async (e) => {
-    e.preventDefault();
+const handleBooking = async (e) => {
+  e.preventDefault();
 
-    try {
-      const startDateTime = `${bookingData.tanggal} ${bookingData.waktu_mulai}:00`;
-      const startDate = new Date(startDateTime);
-      const endDate = new Date(startDate.getTime() + parseInt(bookingData.durasi) * 60 * 60 * 1000);
+  try {
+    // Format waktu_mulai dan validasi
+    const startDateTime = `${bookingData.tanggal} ${bookingData.waktu_mulai}:00`;
+    const startDate = new Date(startDateTime);
 
-      const bookingInfo = {
-        ruangan_id: parseInt(bookingData.ruangan_id),
-        waktu_mulai: startDateTime,
-        waktu_selesai: endDate.toISOString(),
-        jumlah_peserta: parseInt(bookingData.jumlah_peserta),
-        kebutuhan_khusus: bookingData.kebutuhan_khusus,
-      };
+    // Hitung waktu_selesai berdasarkan durasi
+    const durasiJam = parseInt(bookingData.durasi) || 1; // Default 1 jam jika tidak ada
+    const endDate = new Date(startDate.getTime() + durasiJam * 60 * 60 * 1000);
 
-      const response = await api.post('/pemesanan', bookingInfo);
-      setBookingSuccess(true);
-      setBookingData({
-        ruangan_id: '',
-        tanggal: '',
-        waktu_mulai: '',
-        durasi: '1',
-        jumlah_peserta: '',
-        kebutuhan_khusus: '',
-      });
-      setSelectedRoom(null);
-      fetchBookings();
-    } catch (err) {
-      console.error('Gagal membuat booking:', err);
-      alert(err.response?.data?.message || 'Gagal membuat booking');
+    // Debugging: Log tanggal untuk verifikasi
+    console.log('Start Date:', startDate.toString());
+    console.log('End Date (Object):', endDate.toString());
+
+    // Format waktu_selesai secara manual dalam zona waktu lokal
+    const pad = (num) => String(num).padStart(2, '0');
+    const waktuSelesaiString = `${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-${pad(endDate.getDate())} ${pad(endDate.getHours())}:${pad(endDate.getMinutes())}:${pad(endDate.getSeconds())}`;
+    console.log('waktu_selesai (String):', waktuSelesaiString);
+
+    // Validasi di frontend
+    const now = new Date(); // 03:37 AM WIB, 16 Mei 2025
+    if (startDate < now) {
+      alert(`Waktu mulai (${startDate.toLocaleString('id-ID')}) harus setelah waktu sekarang (${now.toLocaleString('id-ID')})`);
+      return;
     }
-  };
+    if (endDate <= startDate) {
+      alert('Waktu selesai harus setelah waktu mulai');
+      return;
+    }
 
+    // Validasi kapasitas ruangan
+    if (!selectedRoom) {
+      alert('Silakan pilih ruangan terlebih dahulu');
+      return;
+    }
+    const jumlahPeserta = parseInt(bookingData.jumlah_peserta);
+    if (jumlahPeserta < selectedRoom.kapasitas_min || jumlahPeserta > selectedRoom.kapasitas_max) {
+      alert(
+        `Jumlah peserta (${jumlahPeserta}) harus antara ${selectedRoom.kapasitas_min} dan ${selectedRoom.kapasitas_max} orang`
+      );
+      return;
+    }
+
+    const bookingInfo = {
+      ruangan_id: parseInt(bookingData.ruangan_id),
+      id_komunitas: user?.id_komunitas || null,
+      waktu_mulai: startDateTime,
+      waktu_selesai: waktuSelesaiString, // Gunakan string yang diformat secara manual
+      jumlah_peserta: jumlahPeserta,
+      kebutuhan_khusus: bookingData.kebutuhan_khusus || null,
+    };
+
+    // Debugging: Log data yang akan dikirim
+    console.log('Booking Info:', bookingInfo);
+
+    const response = await api.post('/pemesanan', bookingInfo);
+    setBookingSuccess(true);
+    setBookingData({
+      ruangan_id: '',
+      tanggal: '',
+      waktu_mulai: '',
+      durasi: '1',
+      jumlah_peserta: '',
+      kebutuhan_khusus: '',
+    });
+    setSelectedRoom(null);
+    fetchBookings();
+  } catch (err) {
+    console.error('Gagal membuat booking:', err);
+    const errorMessage = err.response?.data?.message || 'Gagal membuat booking';
+    const validationErrors = err.response?.data?.errors
+      ? Object.values(err.response.data.errors).flat().join(', ')
+      : '';
+    alert(`${errorMessage}${validationErrors ? `: ${validationErrors}` : ''}`);
+    console.log('Error Response:', err.response?.data);
+  }
+};
   // Filter booking history based on search query
   const filteredHistory = bookings.filter((booking) =>
-    booking.komunitas?.nama_komunitas?.toLowerCase().includes(searchQuery.toLowerCase())
+    booking.ruangan?.nama_ruangan?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Handle logout
@@ -231,11 +312,19 @@ export default function ParticipantDashboard() {
               />
             )}
             {activeTab === 'riwayat' && (
-              <RiwayatPendaftaran
+              <RiwayatBooking
                 loadingHistory={loading.history}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 filteredHistory={filteredHistory}
+              />
+            )}
+            {activeTab === 'anggota' && (
+              <TambahAnggota
+                memberData={memberData}
+                handleMemberChange={handleMemberChange}
+                handleAddMember={handleAddMember}
+                memberAdded={memberAdded}
               />
             )}
           </div>

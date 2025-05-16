@@ -28,35 +28,32 @@ export default function BookingRuangan({
               <div
                 key={room.id}
                 onClick={() => {
-                  setSelectedRoom(room);
-                  handleBookingChange({ target: { name: 'ruangan_id', value: room.id } });
+                  if (room.tersedia) {
+                    setSelectedRoom(room);
+                    handleBookingChange({ target: { name: 'ruangan_id', value: room.id } });
+                  }
                 }}
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
                   selectedRoom?.id === room.id
                     ? 'border-purple-500 bg-purple-50 shadow-md'
-                    : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                    : room.tersedia
+                    ? 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                    : 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
                 }`}
               >
                 <h3 className="font-bold text-lg mb-2 text-gray-800">{room.nama_ruangan}</h3>
                 <p className="text-sm text-gray-600 mb-2">{room.deskripsi}</p>
                 <div className="text-sm text-gray-700">
                   <p>Kapasitas: {room.kapasitas_min}-{room.kapasitas_max} orang</p>
+                  <p>Status: {room.tersedia ? 'Tersedia' : 'Tidak Tersedia'}</p>
                   <div className="mt-2">
                     <strong className="text-xs text-gray-500">Fasilitas:</strong>
                     <ul className="list-disc list-inside text-xs mt-1 text-gray-600">
-                      {(() => {
-                        if (Array.isArray(room.fasilitas)) {
-                          return room.fasilitas.map((fasilitas, index) => (
-                            <li key={index}>{fasilitas}</li>
-                          ));
-                        }
-                        if (typeof room.fasilitas === 'string') {
-                          return room.fasilitas.split(',').map((fasilitas, index) => (
-                            <li key={index}>{fasilitas.trim()}</li>
-                          ));
-                        }
-                        return <li>Tidak ada fasilitas</li>;
-                      })()}
+                      {Array.isArray(room.fasilitas) && room.fasilitas.length > 0 ? (
+                        room.fasilitas.map((fasilitas, index) => <li key={index}>{fasilitas}</li>)
+                      ) : (
+                        <li>Tidak ada fasilitas</li>
+                      )}
                     </ul>
                   </div>
                 </div>
