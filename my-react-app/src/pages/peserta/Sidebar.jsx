@@ -50,8 +50,9 @@ export default function Sidebar({ activeTab, setActiveTab, user, handleLogout, i
             onClick={() => setActiveTab('riwayat')}
           >
             <span className={`${isSidebarCollapsed ? 'text-xl' : 'mr-3'}`}>📜</span>
-            {!isSidebarCollapsed && 'Riwayat Pendaftaran'}
+            {!isSidebarCollapsed && 'Riwayat Boking'}
           </button>
+          
         </nav>
       </div>
       <button

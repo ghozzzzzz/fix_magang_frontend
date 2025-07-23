@@ -1,8 +1,36 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-export default function PendaftaranUlang({ user, handleSubmit, submitted }) {
+export default function PendaftaranUlang({ user, submitted, setSubmitted }) {
   const [members, setMembers] = useState([{ name: '', phone: '', email: '' }]);
+  const [existingMembers, setExistingMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState([]);
+
+  const token = localStorage.getItem('token');
+
+  // Ambil anggota yang sudah ada saat komponen dimount
+  useEffect(() => {
+    const fetchExistingMembers = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8000/api/anggota/by-komunitas/${user.id_komunitas}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setExistingMembers(res.data);
+      } catch (err) {
+        console.error('Gagal mengambil data anggota:', err);
+        setExistingMembers([]);
+      }
+    };
+
+    if (user?.id_komunitas) fetchExistingMembers();
+  }, [token, user.id_komunitas]);
 
   const handleMemberChange = (index, field, value) => {
     const newMembers = [...members];
@@ -19,158 +47,165 @@ export default function PendaftaranUlang({ user, handleSubmit, submitted }) {
     setMembers(newMembers);
   };
 
-  const onSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const filteredMembers = members.filter(member => member.name.trim() !== '');
-    formData.append('members', JSON.stringify(filteredMembers));
-    handleSubmit(e, formData);
+    setErrors([]);
+    setLoading(true);
+
+    const anggotaList = members.filter((m) => m.name && m.phone && m.email);
+
+    try {
+      for (const anggota of anggotaList) {
+        await axios.post(
+          'http://localhost:8000/api/anggota',
+          {
+            nama: anggota.name,
+            no_telepon: anggota.phone,
+            email: anggota.email,
+            id_komunitas: user.id_komunitas,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      }
+
+      setSubmitted(true);
+      setMembers([{ name: '', phone: '', email: '' }]);
+      setLoading(false);
+
+      // Refresh anggota yang sudah ada
+      const refreshed = await axios.get(
+        `http://localhost:8000/api/anggota/by-komunitas/${user.id_komunitas}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setExistingMembers(refreshed.data);
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+      if (err.response?.status === 422) {
+        setErrors(err.response.data);
+      } else {
+        setErrors(['Terjadi kesalahan saat mengirim data.']);
+      }
+    }
   };
 
   return (
     <div className="animate-fadeIn">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Pendaftaran Ulang</h2>
+
       {user && (
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Nama Lengkap</label>
-            <input
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder="Masukkan nama lengkap"
-              defaultValue={user.koordinator}
-              name="nama_lengkap"
-              required
-            />
+        <>
+          {/* Info Komunitas */}
+          <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-4">
+            <p><strong>Koordinator:</strong> {user.koordinator}</p>
+            <p><strong>Komunitas:</strong> {user.nama_komunitas}</p>
+            <p><strong>Email:</strong> {user.email_komunitas}</p>
+            <p><strong>No. Telepon:</strong> {user.telepon}</p>
           </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Asal Komunitas</label>
-            <input
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder="Masukkan asal komunitas"
-              defaultValue={user.nama_komunitas}
-              name="asal_komunitas"
-              required
-            />
+
+          {/* Daftar Anggota yang Sudah Ada */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-2 text-gray-700">Anggota Terdaftar</h3>
+            {existingMembers.length === 0 ? (
+              <p className="text-gray-500 text-sm">Belum ada anggota terdaftar.</p>
+            ) : (
+              <ul className="text-sm space-y-1">
+                {existingMembers.map((anggota) => (
+                  <li key={anggota.id} className="border-b py-1">
+                    <span className="font-medium">{anggota.nama}</span> – {anggota.no_telepon} – {anggota.email}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Email Aktif</label>
-            <input
-              type="email"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder="Masukkan email aktif"
-              defaultValue={user.email_komunitas}
-              name="email"
-              required
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Nomor HP</label>
-            <input
-              type="tel"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder="Masukkan nomor HP"
-              defaultValue={user.telepon}
-              name="nomor_hp"
-              required
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Jumlah Anggota</label>
-            <input
-              type="number"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder="Masukkan jumlah anggota"
-              name="jumlah_anggota"
-              min="1"
-              required
-            />
-          </div>
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700">Daftar Anggota</label>
-            {members.map((member, index) => (
-              <div key={index} className="space-y-2 p-4 border border-gray-200 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <input
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    placeholder={`Nama anggota ${index + 1}`}
-                    value={member.name}
-                    onChange={(e) => handleMemberChange(index, 'name', e.target.value)}
-                  />
-                  {members.length > 1 && (
-                    <button
-                      type="button"
-                      className="p-2 text-red-600 hover:text-red-800"
-                      onClick={() => removeMemberField(index)}
-                    >
-                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                <input
-                  type="tel"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder={`Nomor HP anggota ${index + 1}`}
-                  value={member.phone}
-                  onChange={(e) => handleMemberChange(index, 'phone', e.target.value)}
-                />
-                <input
-                  type="email"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder={`Email anggota ${index + 1}`}
-                  value={member.email}
-                  onChange={(e) => handleMemberChange(index, 'email', e.target.value)}
-                />
-              </div>
-            ))}
-            <button
-              type="button"
-              className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
-              onClick={addMemberField}
-            >
-              + Tambah Anggota
-            </button>
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 rounded-lg hover:from-blue-700 hover:to-blue-600 shadow-md transition-all duration-300 font-medium"
-          >
-            Kirim Pendaftaran
-          </button>
-          {submitted && (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg animate-fadeIn">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
+
+          {/* Form Tambah Anggota */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700">Tambah Anggota Baru</label>
+              {members.map((member, index) => (
+                <div key={index} className="space-y-2 p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      className="w-full p-3 border border-gray-300 rounded-lg"
+                      placeholder={`Nama anggota ${index + 1}`}
+                      value={member.name}
+                      onChange={(e) => handleMemberChange(index, 'name', e.target.value)}
+                      required
                     />
-                  </svg>
+                    {members.length > 1 && (
+                      <button
+                        type="button"
+                        className="p-2 text-red-600 hover:text-red-800"
+                        onClick={() => removeMemberField(index)}
+                      >
+                        ❌
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="tel"
+                    className="w-full p-3 border border-gray-300 rounded-lg"
+                    placeholder={`Nomor HP anggota ${index + 1}`}
+                    value={member.phone}
+                    onChange={(e) => handleMemberChange(index, 'phone', e.target.value)}
+                    required
+                  />
+                  <input
+                    type="email"
+                    className="w-full p-3 border border-gray-300 rounded-lg"
+                    placeholder={`Email anggota ${index + 1}`}
+                    value={member.email}
+                    onChange={(e) => handleMemberChange(index, 'email', e.target.value)}
+                    required
+                  />
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">Pendaftaran berhasil dikirim!</p>
-                  <p className="text-sm text-green-700 mt-1">
-                    Status: <span className="font-semibold">Menunggu persetujuan</span>
-                  </p>
-                </div>
-              </div>
+              ))}
+              <button
+                type="button"
+                className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                onClick={addMemberField}
+              >
+                + Tambah Anggota
+              </button>
             </div>
-          )}
-        </form>
+
+            {errors.length > 0 && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                {Object.entries(errors).map(([field, messages]) => (
+                  <div key={field}>{field}: {Array.isArray(messages) ? messages.join(', ') : messages}</div>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-all"
+            >
+              {loading ? 'Mengirim...' : 'Kirim Pendaftaran'}
+            </button>
+
+            {submitted && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg animate-fadeIn">
+                <p className="text-green-800 font-medium">Pendaftaran berhasil dikirim!</p>
+                <p className="text-green-700 text-sm">Status: <strong>Menunggu persetujuan</strong></p>
+              </div>
+            )}
+          </form>
+        </>
       )}
     </div>
   );
 }
 
 PendaftaranUlang.propTypes = {
-  user: PropTypes.object,
-  handleSubmit: PropTypes.func.isRequired,
+  user: PropTypes.object.isRequired,
   submitted: PropTypes.bool.isRequired,
+  setSubmitted: PropTypes.func.isRequired,
 };

@@ -21,26 +21,28 @@ export default function Login({ setUser }) {
   };
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setError(null);
+  e.preventDefault();
+  setError(null);
 
-    try {
-      const response = await api.post('/auth/komunitas/login', formData);
-      
-      // Simpan token dan data user
-      localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('komunitas', JSON.stringify(response.data.komunitas));
-      
-      if (remember) {
-        localStorage.setItem('remember', 'true');
-      }
+  try {
+    const response = await api.post('/auth/komunitas/login', formData);
+    
+    // Simpan token dan data user
+    localStorage.setItem('token', response.data.access_token);
+    localStorage.setItem('komunitas', JSON.stringify(response.data.komunitas));
+    
+    // Set header Authorization untuk semua request berikutnya
+    api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+    
+    setUser({ role: "participant", ...response.data.komunitas });
+localStorage.setItem("user", JSON.stringify({ role: "participant", ...response.data.komunitas }));
 
-      setUser("participant");
-      navigate("/participant");
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login gagal. Silakan coba lagi.');
-    }
-  };
+    navigate("/participant");
+  } catch (err) {
+    setError(err.response?.data?.message || 'Login gagal. Silakan coba lagi.');
+    console.error("Login error:", err);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-yellow-100 px-4">

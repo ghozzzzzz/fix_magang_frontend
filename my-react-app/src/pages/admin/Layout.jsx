@@ -6,13 +6,17 @@ export default function Layout({ activeSection, setActiveSection, children }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear localStorage
+  const confirmLogout = window.confirm("Apakah Anda yakin ingin keluar?");
+  if (confirmLogout) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('adminSession');
-    console.log('Logged out');
-    navigate('/admin-login'); // Redirect to admin-login route
-  };
+
+    // Gunakan redirect paksa agar keluar dari context admin
+    window.location.href = '/admin-login';
+  }
+};
+
 
   const getButtonClass = (section) => `
     w-full text-left px-4 py-3 rounded-lg flex items-center transition-all

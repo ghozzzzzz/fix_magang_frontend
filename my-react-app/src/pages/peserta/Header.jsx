@@ -34,6 +34,7 @@ export default function Header({ activeTab, setActiveTab }) {
         >
           Riwayat Boking
         </div>
+        
       </div>
     </div>
   );
