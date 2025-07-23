@@ -7,7 +7,7 @@ import PendaftaranUlang from '../peserta/PendaftaranUlang';
 import BookingRuangan from '../peserta/BookingRuangan';
 import RiwayatBooking from '../peserta/RiwayatBooking';
 import TambahAnggota from '../peserta/TambahAnggota';
-import ManajemenAnggota from './ManajemenAnggota';
+
 
 export default function ParticipantDashboard() {
   const navigate = useNavigate();
@@ -327,20 +327,13 @@ const handleBooking = async (e) => {
               />
             )}
             {activeTab === 'anggota' && (
-  <>
-    <TambahAnggota
-      memberData={memberData}
-      handleMemberChange={handleMemberChange}
-      handleAddMember={handleAddMember}
-      memberAdded={memberAdded}
-    />
-    <hr className="my-6 border-gray-300" />
-    {user && (
-      <ManajemenAnggota komunitasId={user.id_komunitas} />
-    )}
-  </>
-)}
-
+              <TambahAnggota
+                memberData={memberData}
+                handleMemberChange={handleMemberChange}
+                handleAddMember={handleAddMember}
+                memberAdded={memberAdded}
+              />
+            )}
           </div>
         </div>
       </div>
